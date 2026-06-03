@@ -1,0 +1,26 @@
+name: Execução Manual
+
+trigger: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- checkout: self
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: '24.x'
+  displayName: 'Install Node.js'
+
+- script: npm install -g yarn
+  displayName: 'Install Yarn'
+
+- script: yarn
+  displayName: 'Install dependencies'
+
+- script: yarn playwright install
+  displayName: 'Install Playwright browsers'
+
+- script: yarn run e2e
+  displayName: 'Run E2E tests'
