@@ -1,71 +1,62 @@
 # CI de nível 01 - Disparo manual através de clique
 
-# nome da pipeline
-
+#nome da pipeline
 name: 'Execução manual - self hosted'
 
 # gatilhos/triggers - regras de disparo
-
+# gatilho manual - workflow_dispatch
 on:
-workflow_dispatch:
+  workflow_dispatch:
 
 # tarefas dentro da pipeline
-
 jobs:
+  #nome do job
+  e2e-tests:
+    #maquina onde o job vai rodar
+    runs-on: ubuntu-latest
+    #passos do job
+    steps:
+      #clone do projeto
+      - uses: actions/checkout@v4
 
-# job de execução dos testes
+      #instalação do node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
 
-e2e-tests:
-runs-on: self-hosted
+      #instalação do Yarn
+      - name: Instalando Yarn
+        run: npm install -g yarn   
 
-steps:
-  # clone do projeto
-  - uses: actions/checkout@v4
+      #instalação das dependências
+      - name: Instalando dependências
+        run: yarn
 
-  # instalação do Node.js
-  - uses: actions/setup-node@v4
-    with:
-      node-version: 24.x
+      #instalaçãa dos browsers do playwright
+      - name: Intalando browsers do playwright
+        run: yarn playwright install
 
-  # instalação do Yarn
-  - name: Instalando Yarn
-    run: npm install -g yarn
+      #executar os testes e2e
+      - name: Executando os testes e2e
+        run: yarn run e2e     
+  notify-failure:
+  name: Notificar falha no Telegram
+  needs: e2e-tests
+  if: ${{failure()}}
+  runs-on: ubuntu-latest
 
-  # instalação das dependências
-  - name: Instalando dependências
-    run: yarn
-
-  # instalação dos browsers do Playwright
-  - name: Instalando browsers do Playwright
-    run: yarn playwright install
-
-  # execução dos testes E2E
-  - name: Executando os testes e2e
-    run: yarn run e2e
-
-# job de notificação
-
-notify-failure:
-name: Notificar falha no Telegram
-needs: e2e-tests
-if: failure()
-runs-on: ubuntu-latest
-
-steps:
-  - name: Telegram Notify
-    uses: appleboy/telegram-action@v1.0.1
-    with:
-      to: ${{ secrets.TELEGRAM_TO }}
-      token: ${{ secrets.TELEGRAM_TOKEN }}
-      format: markdown
-      message: |
-        🚨 *Pipeline Falhou*
-
-        📋 *Workflow:* ${{ github.workflow }}
-        📦 *Repositório:* ${{ github.repository }}
-        🌿 *Branch:* ${{ github.ref_name }}
-        👤 *Autor:* ${{ github.actor }}
-        🔢 *Execução:* #${{ github.run_number }}
-
-        🔗 *Logs:*
-        https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  steps:
+  name: Telegram Notify
+  uses: appleboy/telegram-action@v1.0.1
+  with: 
+    to: ${{ secrets.TELEGRAM_TO }}
+    token: ${{ secrets.TELEGRAM_TOKEN }}
+    format: markdown
+    message: |
+      🚨 Pipeline Falhou
+      *Repositório:* ${{ github.repository }}
+      *Branch:* ${{ github.ref_name }}
+      *Autor:* ${{ github.actor }}
+      *Workflow:* ${{ github.workflow }}
+      🔗 Ver detalhes:
+      https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
