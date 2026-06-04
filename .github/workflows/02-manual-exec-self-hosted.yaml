@@ -39,7 +39,12 @@ jobs:
 
       #executar os testes e2e
       - name: Executando os testes e2e
-        run: yarn run e2e     
+        run: yarn run e2e
+        
+      - name: Simular falha
+        run: |
+          echo "Teste de notificação"
+          exit 1  
 
   notify-failure:
     name: Notificar falha no Telegram
